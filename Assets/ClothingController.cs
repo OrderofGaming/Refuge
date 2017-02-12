@@ -10,15 +10,23 @@ public class ClothingController : MonoBehaviour
     [Range(1, 6)]
     public int hairdo = 1;
     public Color shirtColor, hairColor, skinTone;
-    public GameObject maleHair, femaleHair;
-    public Sprite girlShirt, guyShirt;
+	[SerializeField]
+    private GameObject maleHair, femaleHair;
+	[SerializeField]
+    private Sprite girlShirt, guyShirt;
 
     [Range(0, 4)]
     public int smile = 0;
-    public SpriteRenderer smileObject;
-    public Sprite[] smiles;
+	[SerializeField]
+    private SpriteRenderer smileObject;
+	[SerializeField]
+    private Sprite[] smiles;
     [Range(0, 3)]
     public int sleeveLength;
+
+	[SerializeField]
+	private GameObject bars;
+	public bool inJail = false;
 
 	private List<Transform>  children;
 
@@ -73,6 +81,31 @@ public class ClothingController : MonoBehaviour
         }
 
         smileObject.sprite = smiles[smile];
+
+		bars.SetActive (inJail);
+
+		if (inJail) {
+			foreach (GameObject g in GameObject.FindGameObjectsWithTag("shirt"))
+			{
+				if (!children.Contains (g.transform))
+					continue;
+
+				var renderer = g.GetComponent<SpriteRenderer>();
+
+				Color color;
+				if (ColorUtility.TryParseHtmlString ("#FFA011FF", out color)) {
+					renderer.color = color;
+				}
+
+				if (g.name.Contains("arm"))
+				{
+					if (g.name.Contains("short"))
+						renderer.enabled = true;
+					else
+						renderer.enabled = false;
+				}
+			}
+		}
     }
 
     void Start()

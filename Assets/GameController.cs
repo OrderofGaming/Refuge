@@ -148,7 +148,7 @@ public class GameController : MonoBehaviour {
 		a_player.characterController.sleeveLength = Random.Range(0, 4);
 
 		// Start smiling!
-		a_player.characterController.smile = 0;
+		a_player.characterController.smile = 3;
 
 		// Update everyone
 		a_player.characterController.UpdateCharacter ();
