@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 34340417eb267404eb63490dc3f92769
+timeCreated: 1484365224
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Sloppy Hand
+  fontNames:
+  - Sloppy Hand
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
