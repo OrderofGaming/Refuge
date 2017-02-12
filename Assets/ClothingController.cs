@@ -20,13 +20,18 @@ public class ClothingController : MonoBehaviour
     [Range(0, 3)]
     public int sleeveLength;
 
-    void UpdateCharacter()
+	private List<Transform>  children;
+
+    public void UpdateCharacter()
     {
         var shirtRenderer = transform.GetChild(0).GetComponent<SpriteRenderer>();
         shirtRenderer.sprite = isMale ? guyShirt : girlShirt;
 
-        foreach (GameObject g in GameObject.FindGameObjectsWithTag("shirt"))
+		foreach (GameObject g in GameObject.FindGameObjectsWithTag("shirt"))
         {
+			if (!children.Contains (g.transform))
+				continue;
+			
             var renderer = g.GetComponent<SpriteRenderer>();
 
             renderer.color = (shirtColor);
@@ -39,11 +44,15 @@ public class ClothingController : MonoBehaviour
             }
         }
         foreach (GameObject g in GameObject.FindGameObjectsWithTag("hair"))
-        {
+		{
+			if (!children.Contains (g.transform))
+				continue;
             g.GetComponent<SpriteRenderer>().color = (hairColor);
         }
         foreach (GameObject g in GameObject.FindGameObjectsWithTag("skin"))
-        {
+		{
+			if (!children.Contains (g.transform))
+				continue;
             g.GetComponent<SpriteRenderer>().color = (skinTone);
         }
 
@@ -68,11 +77,13 @@ public class ClothingController : MonoBehaviour
 
     void Start()
     {
+		children = new List<Transform>(GetComponentsInChildren<Transform> ());
         UpdateCharacter();
     }
 
     void OnValidate()
-    {
+	{
+		children = new List<Transform>(GetComponentsInChildren<Transform> ());
         UpdateCharacter();
     }
 }
