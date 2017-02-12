@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: af0e13347f8eb7d42b9a771a5e65acd1
+timeCreated: 1486874274
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - introTexts: {fileID: 4900000, guid: 093ec0b77b6dd754cab67b6ed5e6c8e6, type: 3}
+  - storyTexts: {fileID: 4900000, guid: 21c0b5c6048556a4896534f07b384059, type: 3}
+  - aspirationTexts: {fileID: 4900000, guid: ee8065c6d3772b640ba1cb99753707a9, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
