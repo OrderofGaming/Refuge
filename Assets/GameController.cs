@@ -3,6 +3,34 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+[System.Serializable]
+public class Options
+{
+	public GameObject container;
+	public Button trade, shop, chance;
+}
+
+[System.Serializable]
+public class TradeInterface
+{
+	public GameObject container;
+
+}
+
+[System.Serializable]
+public class ShopInterface
+{
+	public GameObject container;
+
+}
+
+[System.Serializable]
+public class ChanceInterface
+{
+	public GameObject container;
+
+}
+
 public class GameController : MonoBehaviour {
 
 	[System.Serializable]
@@ -15,6 +43,13 @@ public class GameController : MonoBehaviour {
 		public Image backgroundImage;
 		public Text infoLabel;
 	}
+
+	[Header("Interfaces")]
+	public GameObject raycastBlock;
+	public Options options;
+	public TradeInterface trading;
+	public ShopInterface shopping;
+	public ChanceInterface chance;
 
 	// Hardcode 4 players
 	[Header("Main player")]
@@ -119,9 +154,9 @@ public class GameController : MonoBehaviour {
 		a_player.characterController.isMale = Random.Range (0, 2) == 0 ? true : false;
 
 		if (a_player.characterController.isMale) {
-			a_player.firstName = maleNames [Random.Range (0, maleNames.Length)];
+			a_player.firstName = maleNames [Random.Range (0, maleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
 		} else {
-			a_player.firstName = femaleNames [Random.Range (0, femaleNames.Length)];
+			a_player.firstName = femaleNames [Random.Range (0, femaleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
 		}
 		// Not sure which numbers to use
 		a_player.age = Random.Range (16, 23);
