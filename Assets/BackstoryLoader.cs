@@ -13,6 +13,8 @@ public class BackstoryLoader : MonoBehaviour {
     public TextAsset storyTexts;
     public TextAsset aspirationTexts;
 
+	public UnityEngine.UI.Text biography;
+
     [Multiline]
     private string formatString = "{0}\n\n{1}\n\n{2}";
 
@@ -23,7 +25,9 @@ public class BackstoryLoader : MonoBehaviour {
         stories = RemoveEmpty(storyTexts.text.Split(separators));
         aspirations = RemoveEmpty(aspirationTexts.text.Split(separators));
 
-        InvokeRepeating("GetBackstory", 0, 1.5f);
+        //InvokeRepeating("GetBackstory", 0, 1.5f);
+
+		biography.text = GetBackstory ();
 	}
 
     private string[] RemoveEmpty(string[] text)
@@ -38,7 +42,9 @@ public class BackstoryLoader : MonoBehaviour {
                                 stories[Random.Range(0, stories.Length)],
                                 aspirations[Random.Range(0, aspirations.Length)]
                 );
-        Debug.Log(backstory);
+		#if UNITY_EDITOR
+		Debug.Log(backstory);
+		#endif
         return backstory;
     }
 }
