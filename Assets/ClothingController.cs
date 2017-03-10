@@ -108,6 +108,40 @@ public class ClothingController : MonoBehaviour
 		}
     }
 
+	public void LookHappy(float duration = -1.0f)
+	{
+		StartCoroutine (ShowExpression (2, duration));
+	}
+
+	public void LookSad(float duration = -1.0f)
+	{
+		StartCoroutine (ShowExpression (4, duration));
+	}
+
+	public void LookOkay(float duration = -1.0f)
+	{
+		StartCoroutine (ShowExpression (3, duration));
+	}
+
+	public void LookSmiling(float duration = -1.0f)
+	{
+		StartCoroutine (ShowExpression (1, duration));
+	}
+
+	public void LookShocked(float duration = -1.0f)
+	{
+		StartCoroutine (ShowExpression (5, duration));
+	}
+
+	IEnumerator ShowExpression(int ID, float seconds)
+	{
+		smileObject.sprite = smiles[ID];
+
+		float time = Time.realtimeSinceStartup; bool infinite = (seconds == -1.0f ? true : false);
+		//yield return new WaitUntil (() => ((time - Time.realtimeSinceStartup >= seconds) || infinite));
+		yield return null;
+	}
+
     void Start()
     {
 		children = new List<Transform>(GetComponentsInChildren<Transform> ());

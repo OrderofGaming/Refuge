@@ -14,6 +14,7 @@ public class Options
 public class TradeInterface
 {
 	public GameObject container;
+	public Button back;
 
 }
 
@@ -21,6 +22,7 @@ public class TradeInterface
 public class ShopInterface
 {
 	public GameObject container;
+	public Button back;
 
 }
 
@@ -28,7 +30,23 @@ public class ShopInterface
 public class ChanceInterface
 {
 	public GameObject container;
+	public Button back;
 
+}
+
+[System.Serializable]
+public class UIInterface
+{
+	[Header("Resource Bars")]
+	public UpdateLabel hygiene, food, clothing;
+
+	[Header("Inventory UI")]
+	public Image[] invSprite;
+	public Text[] invText;
+
+	[Header("Top Bar")]
+	public Toggle moneyIcon;
+	public Text moneyText;
 }
 
 public class GameController : MonoBehaviour {
@@ -46,10 +64,15 @@ public class GameController : MonoBehaviour {
 
 	[Header("Interfaces")]
 	public GameObject raycastBlock;
+
+	public UIInterface mainUI;
+
 	public Options options;
 	public TradeInterface trading;
 	public ShopInterface shopping;
 	public ChanceInterface chance;
+
+	public ScoreController score;
 
 	// Hardcode 4 players
 	[Header("Main player")]
@@ -59,11 +82,19 @@ public class GameController : MonoBehaviour {
 	public PlayerInfo m_player3;
 	public PlayerInfo m_player4;
 
+	private PlayerInfo[] players;
+
+	// This boolean dictates when the turn is over
+	private bool turnInProgress;
+
 	[Header("Set of haircolors")]
 	public Color[] m_haircolors;
 
 	[Header("Set of skintones")]
 	public Color[] m_skintones;
+
+	// Control who's turn it is
+	private int currentPlayersTurn = 0;
 
 	#region FEMALE NAMES
 
@@ -146,6 +177,19 @@ public class GameController : MonoBehaviour {
 		RandomizePlayer (m_player2);
 		RandomizePlayer (m_player3);
 		RandomizePlayer (m_player4);
+
+		players = new PlayerInfo[4];
+
+		players [0] = m_player1;
+		players [1] = m_player2;
+		players [2] = m_player3;
+		players [3] = m_player4;
+
+		InitializePlayerInventories ();
+
+		LinkFunctions ();
+
+		StartCoroutine (MainTurn ());
 	}
 
 	void RandomizePlayer(PlayerInfo a_player)
@@ -187,5 +231,162 @@ public class GameController : MonoBehaviour {
 
 		// Update everyone
 		a_player.characterController.UpdateCharacter ();
+	}
+
+	void InitializePlayerInventories()
+	{
+		score.playerScores = new List<ScoreController.ScoreInfo> ();
+
+		for (int i = 0; i < 4; i++) {
+			score.playerScores.Add (new ScoreController.ScoreInfo ());
+			score.playerScores [i].Initialize ();
+		}
+
+		UpdatePlayerInfo ();
+	}
+
+	public void UpdatePlayerInfo()
+	{
+		mainUI.invSprite [0].sprite = score.playerScores [0].inventory [0].image;
+		mainUI.invSprite [1].sprite = score.playerScores [0].inventory [1].image;
+		mainUI.invSprite [2].sprite = score.playerScores [0].inventory [2].image;
+
+
+		mainUI.invText[0].text = "$" + score.playerScores [0].inventory [0].value.ToString();
+		mainUI.invText[1].text = "$" + score.playerScores [0].inventory [1].value.ToString();
+		mainUI.invText[2].text = "$" + score.playerScores [0].inventory [2].value.ToString();
+
+		mainUI.moneyText.text = "$" + score.playerScores [0].money.ToString("N0");
+
+		mainUI.moneyIcon.isOn = score.playerScores[0].money == 0 ? false : true;
+	}
+
+	void SetContainersActiveFalse(bool raycastActive)
+	{
+		raycastBlock.SetActive (raycastActive);
+		trading.container.SetActive (false);
+		shopping.container.SetActive (false);
+		chance.container.SetActive (false);
+		options.container.SetActive (false);
+	}
+
+	void SetBackgroundSelected(int a_selected = 0)
+	{
+		Color colorToSet; ColorUtility.TryParseHtmlString ("#BFDFFFFF", out colorToSet);
+		for (int i = 0; i < 4; i++) {
+			if (i != a_selected)
+				players [i].backgroundImage.color = Color.black;
+			else
+				players [i].backgroundImage.color = colorToSet;
+		}
+	}
+
+	void LinkFunctions()
+	{
+		options.chance.onClick.AddListener (() => chance_onClick ());
+		options.trade.onClick.AddListener (() => trade_onClick ());
+		options.shop.onClick.AddListener (() => shop_onClick ());
+
+		//trading.back.onClick.AddListener (() => back_onClick ());
+		//shopping.back.onClick.AddListener (() => back_onClick ());
+	}
+
+	void back_onClick()
+	{
+		SetContainersActiveFalse (false);
+	}
+
+	void chance_onClick()
+	{
+		SetContainersActiveFalse (true);
+		chance.container.SetActive (true);
+	}
+
+	void trade_onClick()
+	{
+		SetContainersActiveFalse (true);
+		trading.container.SetActive (true);
+	}
+
+	void shop_onClick()
+	{
+		SetContainersActiveFalse (true);
+		shopping.container.SetActive (true);
+	}
+
+	IEnumerator MainTurn()
+	{
+		turnInProgress = true;
+		SetBackgroundSelected (currentPlayersTurn);
+	
+		SetContainersActiveFalse (true);
+
+		if (currentPlayersTurn == 0) {
+			options.container.SetActive (true);
+		}
+
+		//players[currentPlayersTurn].characterController.LookHappy (1.0f);
+
+		while (turnInProgress) {
+			// Game loop here
+
+			if (currentPlayersTurn == 0) {
+				// PLAYER TURN
+				if (shopping.container.activeInHierarchy) {
+					yield return StartCoroutine (ShopTurn ());
+				} else if (trading.container.activeInHierarchy) {
+					yield return StartCoroutine (TradeTurn ());
+				} else if (chance.container.activeInHierarchy) {
+					yield return StartCoroutine (ChanceTurn ());
+				}
+			} else {
+				// AI TURN
+				yield return new WaitForSeconds(Random.Range(0.5f, 1.0f));
+
+				turnInProgress = false;
+			}
+
+			yield return new WaitForEndOfFrame ();
+		}
+
+		currentPlayersTurn = (currentPlayersTurn + 1) % 4; // 4, or more players I guess
+		StartCoroutine(MainTurn());
+
+		Debug.Log ("Ended Main Turn Coroutine");
+
+		yield return null;
+	}
+
+	IEnumerator ShopTurn()
+	{
+		while (shopping.container.activeInHierarchy) {
+			// Shop Turn
+
+			yield return new WaitForFixedUpdate ();
+		}
+
+		yield return null;
+	}
+
+	IEnumerator TradeTurn()
+	{
+		while (trading.container.activeInHierarchy) {
+			// Trade Turn
+
+			yield return new WaitForFixedUpdate ();
+		}
+
+		yield return null;
+	}
+
+	IEnumerator ChanceTurn()
+	{
+		while (chance.container.activeInHierarchy) {
+			// Chance Turn
+
+			yield return new WaitForFixedUpdate ();
+		}
+
+		yield return null;
 	}
 }
