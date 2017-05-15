@@ -14,7 +14,6 @@ public class Options
 public class TradeInterface
 {
 	public GameObject container;
-	public Button back;
 
 }
 
@@ -22,16 +21,25 @@ public class TradeInterface
 public class ShopInterface
 {
 	public GameObject container;
-	public Button back;
 
+    public Button govID;
+
+    public Button food;
+    public Button hygiene;
+    public Button clothing;
+
+    public Button[] items;
 }
 
 [System.Serializable]
 public class ChanceInterface
 {
 	public GameObject container;
-	public Button back;
 
+    public Text title;
+    public Text description;
+    public Image icon;
+    public Button proceed;
 }
 
 [System.Serializable]
@@ -47,6 +55,8 @@ public class UIInterface
 	[Header("Top Bar")]
 	public Toggle moneyIcon;
 	public Text moneyText;
+
+    public Text roundCounter;
 }
 
 public class GameController : MonoBehaviour {
@@ -57,7 +67,7 @@ public class GameController : MonoBehaviour {
 		public string firstName;
 		public int age;
 
-		public ClothingController characterController;
+		public CharacterController characterController;
 		public Image backgroundImage;
 		public Text infoLabel;
 	}
@@ -71,6 +81,7 @@ public class GameController : MonoBehaviour {
 	public TradeInterface trading;
 	public ShopInterface shopping;
 	public ChanceInterface chance;
+    public Button backButton;
 
 	public ScoreController score;
 
@@ -94,7 +105,9 @@ public class GameController : MonoBehaviour {
 	public Color[] m_skintones;
 
 	// Control who's turn it is
-	private int currentPlayersTurn = 0;
+	[HideInInspector] public int currentPlayersTurn = 0;
+
+    private int turnCounter = 0;
 
 	#region FEMALE NAMES
 
@@ -187,7 +200,9 @@ public class GameController : MonoBehaviour {
 
 		InitializePlayerInventories ();
 
-		LinkFunctions ();
+        SetupShop(true);
+
+        LinkFunctions ();
 
 		StartCoroutine (MainTurn ());
 	}
@@ -256,7 +271,11 @@ public class GameController : MonoBehaviour {
 		mainUI.invText[1].text = "$" + score.playerScores [0].inventory [1].value.ToString();
 		mainUI.invText[2].text = "$" + score.playerScores [0].inventory [2].value.ToString();
 
-		mainUI.moneyText.text = "$" + score.playerScores [0].money.ToString("N0");
+        mainUI.hygiene.UpdateValues(score.playerScores[0].hygiene);
+        mainUI.food.UpdateValues(score.playerScores[0].food);
+        mainUI.clothing.UpdateValues(score.playerScores[0].clothes);
+
+        mainUI.moneyText.text = "$" + score.playerScores [0].money.ToString("N0");
 
 		mainUI.moneyIcon.isOn = score.playerScores[0].money == 0 ? false : true;
 	}
@@ -286,14 +305,19 @@ public class GameController : MonoBehaviour {
 		options.chance.onClick.AddListener (() => chance_onClick ());
 		options.trade.onClick.AddListener (() => trade_onClick ());
 		options.shop.onClick.AddListener (() => shop_onClick ());
+        options.trade.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
+        options.shop.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
+        options.chance.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
 
-		//trading.back.onClick.AddListener (() => back_onClick ());
-		//shopping.back.onClick.AddListener (() => back_onClick ());
+        backButton.onClick.AddListener (() => back_onClick ());
 	}
 
 	void back_onClick()
 	{
 		SetContainersActiveFalse (false);
+        raycastBlock.SetActive(true);
+        options.container.SetActive(true);
+        backButton.gameObject.SetActive(false);
 	}
 
 	void chance_onClick()
@@ -321,13 +345,41 @@ public class GameController : MonoBehaviour {
 	
 		SetContainersActiveFalse (true);
 
-		if (currentPlayersTurn == 0) {
+		if (currentPlayersTurn == 0) { // main player
+            SetupShop(false);
+            turnCounter += 1;
+            mainUI.roundCounter.text = "Turn " + turnCounter.ToString();
+            raycastBlock.SetActive(true);
 			options.container.SetActive (true);
 		}
 
-		//players[currentPlayersTurn].characterController.LookHappy (1.0f);
+		players[currentPlayersTurn].characterController.LookHappy (1.0f);
 
-		while (turnInProgress) {
+        // Update missed turns, leave jail if missed turns are at 0
+        if (score.playerScores[currentPlayersTurn].missedTurns <= 0)
+        {
+            score.playerScores[currentPlayersTurn].inJail = false;
+            score.playerScores[currentPlayersTurn].missedTurns = 0;
+        }
+        else
+        {
+            // Only happen for the player
+            turnInProgress = false;
+        }
+        score.playerScores[currentPlayersTurn].missedTurns -= 1;
+
+        // Update the UI for in jail
+        for (int i = 0; i < players.Length; i++)
+        {
+            if (score.playerScores[i].inJail)
+                players[i].characterController.inJail = true;
+            else
+                players[i].characterController.inJail = false;
+
+            players[i].characterController.UpdateCharacter();
+        }
+
+        while (turnInProgress) {
 			// Game loop here
 
 			if (currentPlayersTurn == 0) {
@@ -346,10 +398,12 @@ public class GameController : MonoBehaviour {
 				turnInProgress = false;
 			}
 
+            SetMoney(score.playerScores[0].money); // Update the UI for the main players bank
+
 			yield return new WaitForEndOfFrame ();
 		}
 
-		currentPlayersTurn = (currentPlayersTurn + 1) % 4; // 4, or more players I guess
+        currentPlayersTurn = (currentPlayersTurn + 1) % 4; // 4, or more players I guess
 		StartCoroutine(MainTurn());
 
 		Debug.Log ("Ended Main Turn Coroutine");
@@ -357,9 +411,113 @@ public class GameController : MonoBehaviour {
 		yield return null;
 	}
 
-	IEnumerator ShopTurn()
+    void ChangeMoney(int amount)
+    {
+        score.playerScores[0].money += amount;
+        if (score.playerScores[0].money < 0)
+            score.playerScores[0].money = 0;
+        UpdatePlayerInfo();
+    }
+
+    void SetMoney(int amount)
+    {
+        score.playerScores[0].money = amount;
+        UpdatePlayerInfo();
+    }
+
+    void SetupShop(bool allItems = true)
+    {
+        var ic = GetComponent<Items>(); // ic = Item controller
+
+        if (allItems)
+        {
+            foreach (Button b in shopping.items)
+            {
+                Text t = b.GetComponentInChildren<Text>();
+                Items.ItemContainer i = ic.items[Random.Range(0, ic.items.Length)];
+
+                t.text = i.title + "\n<color=green>$" + i.value.ToString() + "</color>";
+                b.image.sprite = i.image;
+
+                b.onClick.RemoveAllListeners();
+                b.onClick.AddListener(() =>
+                {
+                    int cost = i.value;
+
+                    if (score.playerScores[0].money >= cost) // we have the $$$
+                    {
+                        ChangeMoney(-cost); // Update the Money and MoneyUI
+                        // play a sound
+                        score.playerScores[0].inventory.Add(i);
+                        UpdatePlayerInfo();
+                    }
+                });
+            }
+        }
+        else
+        {
+            Button b = shopping.items[Random.Range(0, shopping.items.Length)];
+
+            Text t = b.GetComponentInChildren<Text>();
+            Items.ItemContainer i = ic.items[Random.Range(0, ic.items.Length)];
+
+            t.text = i.title + "\n<color=green>$" + i.value.ToString() + "</color>";
+            b.image.sprite = i.image;
+
+            b.onClick.RemoveAllListeners();
+            b.onClick.AddListener(() =>
+            {
+                int cost = i.value;
+
+                if (score.playerScores[0].money >= cost) // we have the $$$
+                {
+                    ChangeMoney(-cost); // Update the Money and MoneyUI
+                                        // play a sound
+                    score.playerScores[0].inventory.Add(i);
+                    UpdatePlayerInfo();
+                }
+            });
+        }
+    }
+
+    IEnumerator ShopTurn()
 	{
-		while (shopping.container.activeInHierarchy) {
+        {   // Set up the other buttons
+            shopping.clothing.onClick.RemoveAllListeners();
+            shopping.food.onClick.RemoveAllListeners();
+            shopping.hygiene.onClick.RemoveAllListeners();
+
+            // Add button listeners
+            shopping.clothing.onClick.AddListener(() =>
+            {
+                if (score.playerScores[0].money >= 20) // HARDCODED costs $20
+                {
+                    ChangeMoney(-20); // Update the Money and MoneyUI
+                    score.playerScores[0].clothes += 10;
+                    UpdatePlayerInfo();
+                }
+            });
+            shopping.food.onClick.AddListener(() =>
+            {
+                if (score.playerScores[0].money >= 20) // HARDCODED costs $20
+                {
+                    ChangeMoney(-20); // Update the Money and MoneyUI
+                    score.playerScores[0].food += 10;
+                    UpdatePlayerInfo();
+                }
+            });
+            shopping.hygiene.onClick.AddListener(() =>
+            {
+                if (score.playerScores[0].money >= 20) // HARDCODED costs $20
+                {
+                    ChangeMoney(-20); // Update the Money and MoneyUI
+                    score.playerScores[0].hygiene += 10;
+                    UpdatePlayerInfo();
+                }
+            });
+        }
+
+        while (shopping.container.activeInHierarchy) {
 			// Shop Turn
 
 			yield return new WaitForFixedUpdate ();
@@ -381,12 +539,37 @@ public class GameController : MonoBehaviour {
 
 	IEnumerator ChanceTurn()
 	{
+        var c = chance;
+
+        var cp = GetComponent<CardProvider>();
+
+        var card = cp.GetCard(); // also calls the function here
+
+        c.icon.sprite = card.Image;
+        c.title.text = card.Title;
+        c.description.text = card.Description;
+
+        if (card.endsTurn)
+            backButton.gameObject.SetActive(false);
+
+        var t = c.proceed.GetComponentInChildren<Text>();
+        t.text = (card.endsTurn ? "End Turn" : "Next");
+        c.proceed.onClick.AddListener(() => {
+            if (!card.endsTurn) back_onClick();
+            else chance.container.SetActive(false);
+        });
+
 		while (chance.container.activeInHierarchy) {
 			// Chance Turn
 
 			yield return new WaitForFixedUpdate ();
 		}
 
-		yield return null;
+        SendMessage(card.Function.ToString(), card.value);
+
+        // Should we end the turn?
+        turnInProgress = !card.endsTurn;
+
+        yield return null;
 	}
 }

@@ -42,9 +42,6 @@ public class BackstoryLoader : MonoBehaviour {
                                 stories[Random.Range(0, stories.Length)],
                                 aspirations[Random.Range(0, aspirations.Length)]
                 );
-		#if UNITY_EDITOR
-		Debug.Log(backstory);
-		#endif
         return backstory;
     }
 }

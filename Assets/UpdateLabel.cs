@@ -3,25 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(Scrollbar))]
+[RequireComponent(typeof(Slider))]
 public class UpdateLabel : MonoBehaviour {
 
-	private Text m_scrollBarLabel;
+    private Text m_sliderLabel;
+	private Slider m_slider;
 
-	private Scrollbar m_scrollBar;
+	void Awake () {
+		m_slider = GetComponent<Slider> ();	
+		m_sliderLabel = GetComponentInChildren<Text> ();
 
-	void Start () {
-		m_scrollBar = GetComponent<Scrollbar> ();	
-		m_scrollBarLabel = GetComponentInChildren<Text> ();
+		m_slider.value = 0;
 
-		m_scrollBar.value = 0.0f;
-
-		UpdateValues (0.0f);
+		UpdateValues (0);
 	}
 	
-	public void UpdateValues(float a_newVal)
+	public void UpdateValues(int a_newVal)
 	{
-		m_scrollBar.size = a_newVal;
-		m_scrollBarLabel.text = Mathf.RoundToInt(a_newVal * 100).ToString () + "%";
+        m_slider.value = a_newVal;
+		m_sliderLabel.text = a_newVal.ToString () + "%";
 	}
 }
