@@ -24,7 +24,8 @@ public class ScoreController : MonoBehaviour {
 
 			money = 10;
 			governmentID = false;
-			jailTime = 0;
+			missedTurns = 0;
+            inJail = false;
 			food = 5;
 			hygiene = 5;
 			clothes = 5;
@@ -34,7 +35,8 @@ public class ScoreController : MonoBehaviour {
 		public List<Items.ItemContainer> inventory;
 
 		public bool governmentID;
-		public int jailTime;
+        public bool inJail;
+        public int missedTurns;
 
 		public int food;
 		public int hygiene;

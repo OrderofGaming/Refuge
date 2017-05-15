@@ -4,31 +4,32 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [ExecuteInEditMode]
-public class ClothingController : MonoBehaviour
+public class CharacterController : MonoBehaviour
 {
     public bool isMale;
     [Range(1, 6)]
     public int hairdo = 1;
     public Color shirtColor, hairColor, skinTone;
-	[SerializeField]
+    [SerializeField]
     private GameObject maleHair, femaleHair;
-	[SerializeField]
+    [SerializeField]
     private Sprite girlShirt, guyShirt;
 
     [Range(0, 4)]
     public int smile = 0;
-	[SerializeField]
+    [SerializeField]
     private SpriteRenderer smileObject;
-	[SerializeField]
+    [SerializeField]
     private Sprite[] smiles;
     [Range(0, 3)]
     public int sleeveLength;
 
-	[SerializeField]
-	private GameObject bars;
-	public bool inJail = false;
+    [SerializeField]
+    private GameObject bars;
 
-	private List<Transform>  children;
+    public bool inJail = false;
+
+    private List<Transform>  children;
 
     public void UpdateCharacter()
     {
