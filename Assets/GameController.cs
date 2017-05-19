@@ -43,14 +43,98 @@ public class ChanceInterface
 }
 
 [System.Serializable]
+public class InventoryViewer
+{
+    [Header("Inventory UI")]
+    public Image[] invSprite;
+    public Button[] invButtons;
+    private int currIndex;
+    private ScoreController score;
+    public Text[] invText;
+    public Button left;
+    public Button right;
+
+    public void SetupButtons(ScoreController s)
+    {
+        left.onClick.AddListener(() => left_onClick());
+        right.onClick.AddListener(() => right_onClick());
+
+        score = s;
+
+        UpdateUIElements();
+        InvButtons();
+    }
+
+    void InvButtons()
+    {
+        if (invButtons != null) // We need to set up buttons
+        {
+            for (int i = 0; i < invButtons.Length; i++)
+            {
+                invButtons[i].onClick.RemoveAllListeners();
+                invButtons[i].interactable = false;
+                if (score.playerScores[0].inventory.Count > i)
+                {
+                    invButtons[i].onClick.AddListener(() =>
+                    {
+                        //score.gameObject.GetComponent<GameController>().ChangeMoney(
+                        //    score.playerScores[0].inventory[currIndex + i].value);
+
+                        //score.playerScores.RemoveAt(currIndex + i);
+                        //score.gameObject.GetComponent<GameController>()
+                        //    .UpdatePlayerInfo();
+                    });
+                    invButtons[i].interactable = true;
+                }
+            }
+        }
+    }
+
+    void left_onClick()
+    {
+        currIndex -= 1;
+        UpdateUIElements();
+    }
+
+    void right_onClick()
+    {
+        currIndex += 1;
+        UpdateUIElements();
+    }
+
+    public void UpdateUIElements()
+    {
+        if (currIndex < 0) currIndex = 0;
+        if (currIndex > score.playerScores[0].inventory.Count - invSprite.Length)
+        {
+            currIndex = score.playerScores[0].inventory.Count - invSprite.Length;
+        }
+
+        for (int i = 0; i < invSprite.Length; i++)
+        {
+            if (score.playerScores[0].inventory.Count > i)
+            {
+                invSprite[i].sprite = score.playerScores[0].inventory[currIndex + i].image;
+                invText[i].text = "$" + score.playerScores[0].inventory[currIndex + i].value.ToString();
+            }
+            else
+            {
+                invSprite[i].sprite = null;
+                invText[i].text = string.Empty;
+            }
+        }
+
+        InvButtons();
+    }
+}
+
+[System.Serializable]
 public class UIInterface
 {
 	[Header("Resource Bars")]
 	public UpdateLabel hygiene, food, clothing;
 
-	[Header("Inventory UI")]
-	public Image[] invSprite;
-	public Text[] invText;
+    public InventoryViewer[] viewers;
 
 	[Header("Top Bar")]
 	public Toggle moneyIcon;
@@ -81,6 +165,7 @@ public class GameController : MonoBehaviour {
 	public TradeInterface trading;
 	public ShopInterface shopping;
 	public ChanceInterface chance;
+    public Button endTurn;
     public Button backButton;
 
 	public ScoreController score;
@@ -257,20 +342,16 @@ public class GameController : MonoBehaviour {
 			score.playerScores [i].Initialize ();
 		}
 
+        foreach(InventoryViewer i in mainUI.viewers)
+        {
+            i.SetupButtons(score);
+        }
+
 		UpdatePlayerInfo ();
 	}
 
 	public void UpdatePlayerInfo()
 	{
-		mainUI.invSprite [0].sprite = score.playerScores [0].inventory [0].image;
-		mainUI.invSprite [1].sprite = score.playerScores [0].inventory [1].image;
-		mainUI.invSprite [2].sprite = score.playerScores [0].inventory [2].image;
-
-
-		mainUI.invText[0].text = "$" + score.playerScores [0].inventory [0].value.ToString();
-		mainUI.invText[1].text = "$" + score.playerScores [0].inventory [1].value.ToString();
-		mainUI.invText[2].text = "$" + score.playerScores [0].inventory [2].value.ToString();
-
         mainUI.hygiene.UpdateValues(score.playerScores[0].hygiene);
         mainUI.food.UpdateValues(score.playerScores[0].food);
         mainUI.clothing.UpdateValues(score.playerScores[0].clothes);
@@ -278,6 +359,11 @@ public class GameController : MonoBehaviour {
         mainUI.moneyText.text = "$" + score.playerScores [0].money.ToString("N0");
 
 		mainUI.moneyIcon.isOn = score.playerScores[0].money == 0 ? false : true;
+
+        foreach (InventoryViewer i in mainUI.viewers)
+        {
+            i.UpdateUIElements();
+        }
 	}
 
 	void SetContainersActiveFalse(bool raycastActive)
@@ -305,6 +391,7 @@ public class GameController : MonoBehaviour {
 		options.chance.onClick.AddListener (() => chance_onClick ());
 		options.trade.onClick.AddListener (() => trade_onClick ());
 		options.shop.onClick.AddListener (() => shop_onClick ());
+        endTurn.onClick.AddListener(() => endTurn_onClick());
         options.trade.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
         options.shop.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
         options.chance.onClick.AddListener(() => { backButton.gameObject.SetActive(true); });
@@ -337,6 +424,11 @@ public class GameController : MonoBehaviour {
 		SetContainersActiveFalse (true);
 		shopping.container.SetActive (true);
 	}
+
+    void endTurn_onClick()
+    {
+        turnInProgress = false;
+    }
 
 	IEnumerator MainTurn()
 	{
@@ -390,15 +482,26 @@ public class GameController : MonoBehaviour {
 					yield return StartCoroutine (TradeTurn ());
 				} else if (chance.container.activeInHierarchy) {
 					yield return StartCoroutine (ChanceTurn ());
-				}
-			} else {
-				// AI TURN
-				yield return new WaitForSeconds(Random.Range(0.5f, 1.0f));
+                }
+                SetMoney(score.playerScores[0].money); // Update the UI for the main players bank
+            } else {
+                // AI TURN
+                yield return new WaitForSeconds(Random.Range(0.5f, 1.0f));
+
+                switch (Random.Range(0, 2)) // Set to 3 for trade enabled
+                {
+                    case 0: // Chance
+                        AIChance();
+                        break;
+                    case 1: // Shop
+                        AIShop();
+                        break;
+                    case 3: // Trade
+                        break;
+                }
 
 				turnInProgress = false;
 			}
-
-            SetMoney(score.playerScores[0].money); // Update the UI for the main players bank
 
 			yield return new WaitForEndOfFrame ();
 		}
@@ -406,22 +509,56 @@ public class GameController : MonoBehaviour {
         currentPlayersTurn = (currentPlayersTurn + 1) % 4; // 4, or more players I guess
 		StartCoroutine(MainTurn());
 
-		Debug.Log ("Ended Main Turn Coroutine");
-
 		yield return null;
 	}
 
-    void ChangeMoney(int amount)
+    void AIChance()
     {
-        score.playerScores[0].money += amount;
-        if (score.playerScores[0].money < 0)
-            score.playerScores[0].money = 0;
+        var cp = GetComponent<CardProvider>();
+        var card = cp.GetCard(); // also calls the function here
+
+        // Show AI turn info here
+        Debug.LogFormat("Player {0} took a chance. {1}: {2}",
+            players[currentPlayersTurn].firstName,
+            card.Title,
+            card.Description);
+    }
+
+    void AIShop()
+    {
+        int prevMoney = score.playerScores[currentPlayersTurn].money;
+
+        for (int i = 0; i < 3; i++)
+        {
+            int thingToBuy = Random.Range(0, shopping.items.Length);
+            shopping.items[thingToBuy].onClick.Invoke();
+            if (prevMoney != score.playerScores[currentPlayersTurn].money)
+            {   // They successfully bought a thing
+                break;
+            }
+        }
+
+        // Show AI turn info here
+        Debug.LogFormat("Player {0} chose to shop. They spent ${1}.",
+            players[currentPlayersTurn].firstName,
+            prevMoney - score.playerScores[currentPlayersTurn].money);
+
+        turnInProgress = false;
+    }
+
+    public void ChangeMoney(int amount)
+    {
+        score.playerScores[currentPlayersTurn].money += amount;
+        if (score.playerScores[currentPlayersTurn].money < 0)
+            score.playerScores[currentPlayersTurn].money = 0;
         UpdatePlayerInfo();
     }
 
-    void SetMoney(int amount)
+    public void SetMoney(int amount)
     {
-        score.playerScores[0].money = amount;
+        score.playerScores[currentPlayersTurn].money = amount;
+        if (score.playerScores[currentPlayersTurn].money < 0)
+            score.playerScores[currentPlayersTurn].money = 0;
         UpdatePlayerInfo();
     }
 
@@ -444,11 +581,11 @@ public class GameController : MonoBehaviour {
                 {
                     int cost = i.value;
 
-                    if (score.playerScores[0].money >= cost) // we have the $$$
+                    if (score.playerScores[currentPlayersTurn].money >= cost) // we have the $$$
                     {
                         ChangeMoney(-cost); // Update the Money and MoneyUI
                         // play a sound
-                        score.playerScores[0].inventory.Add(i);
+                        score.playerScores[currentPlayersTurn].inventory.Add(i);
                         UpdatePlayerInfo();
                     }
                 });
@@ -469,11 +606,11 @@ public class GameController : MonoBehaviour {
             {
                 int cost = i.value;
 
-                if (score.playerScores[0].money >= cost) // we have the $$$
+                if (score.playerScores[currentPlayersTurn].money >= cost) // we have the $$$
                 {
                     ChangeMoney(-cost); // Update the Money and MoneyUI
                                         // play a sound
-                    score.playerScores[0].inventory.Add(i);
+                    score.playerScores[currentPlayersTurn].inventory.Add(i);
                     UpdatePlayerInfo();
                 }
             });
