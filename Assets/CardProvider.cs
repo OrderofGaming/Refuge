@@ -85,6 +85,8 @@ public class CardProvider : MonoBehaviour
         int currPlayer = gc.currentPlayersTurn; // if it's 0, this is the main player
 
         sc.playerScores[currPlayer].money = int.Parse(a_value);
+        if (sc.playerScores[currPlayer].money < 0)
+            sc.playerScores[currPlayer].money = 0;
     }
 
     void f_GetMoney(string a_value)
@@ -92,6 +94,8 @@ public class CardProvider : MonoBehaviour
         int currPlayer = gc.currentPlayersTurn; // if it's 0, this is the main player
 
         sc.playerScores[currPlayer].money += int.Parse(a_value);
+        if (sc.playerScores[currPlayer].money < 0)
+            sc.playerScores[currPlayer].money = 0;
     }
 
     void f_GoToJail(string a_value)

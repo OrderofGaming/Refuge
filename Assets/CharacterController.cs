@@ -138,12 +138,12 @@ public class CharacterController : MonoBehaviour
 	{
 		smileObject.sprite = smiles[ID];
 
-		float time = Time.realtimeSinceStartup; bool infinite = (seconds == -1.0f ? true : false);
+		//float time = Time.realtimeSinceStartup; bool infinite = (seconds < 0.0f ? true : false);
 		//yield return new WaitUntil (() => ((time - Time.realtimeSinceStartup >= seconds) || infinite));
 		yield return null;
 	}
 
-    void Start()
+    void Awake()
     {
 		children = new List<Transform>(GetComponentsInChildren<Transform> ());
         UpdateCharacter();
