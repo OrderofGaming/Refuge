@@ -11,6 +11,7 @@ public struct Card
     public string Title;
     public string Description;
     public Functions Function;
+    public UnityEvent cardEvent;
     public Sprite Image;
     public string value;
 
