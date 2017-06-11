@@ -26,9 +26,9 @@ public class ScoreController : MonoBehaviour {
 			governmentID = false;
 			missedTurns = 0;
             inJail = false;
-			food = 5;
-			hygiene = 5;
-			clothes = 5;
+			food = 50;
+			hygiene = 50;
+			clothes = 50;
 		}
 
 		public int money;
