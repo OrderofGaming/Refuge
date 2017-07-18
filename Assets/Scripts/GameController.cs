@@ -3,25 +3,85 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+//Game Menus
 [System.Serializable]
 public class GameMenu
 {
 	public GameObject container;
-	public Button chance, endTurn;
+	public Button school, job, applyJob, support;
 }
+
+[System.Serializable]
+public class StandardMenu
+{
+    public GameObject container;
+    public Button money, stranger, food;
+}
+
+[System.Serializable]
+public class StartMenu
+{
+    public GameObject container;
+    public Button newGame, loadGame, exitGame;
+    public Text titleText;
+}
+
+[System.Serializable]
+public class SchoolMenu
+{
+    public GameObject container;
+    public Button transit, walkLong, walkShort;
+}
+
+[System.Serializable]
+public class ApplyJobMenu
+{
+    public GameObject container;
+    public Button coldCall, friend, onlineJob;
+}
+
+[System.Serializable]
+public class JobMenu
+{
+    public GameObject container;
+    public Button transit, walkLong, walkShort;
+}
+
+[System.Serializable]
+public class SupportMenu
+{
+    public GameObject container;
+    public Button friends, family, services;
+}
+
+//Standard Menus
+[System.Serializable]
+public class MoneyMenu
+{
+    public GameObject container;
+    public Button steal, panhandle, dayLabour;
+}
+
+[System.Serializable]
+public class StrangerMenu
+{
+    public GameObject container;
+    public Button pedestrian, homeless, shopOwner;
+}
+
+[System.Serializable]
+public class FoodMenu
+{
+    public GameObject container;
+    public Button scavenge, fastFood, refuge;
+}
+
+//--------------------------------------------------------------//
 
 [System.Serializable]
 public class TradeInterface
 {
     public GameObject container;
-}
-
-[System.Serializable]
-public class MenuInterface
-{
-    public GameObject container;
-    public Button newGame, loadGame, exitGame;
-    public Text titleText;
 }
 
 [System.Serializable]
@@ -60,25 +120,37 @@ public class GameController : MonoBehaviour {
 		public Text infoLabel;
 	}
 
+    private bool inGameMenu = false;
+    private bool inStandardMenu = false;
+
 	[Header("Interfaces")]
 	public GameObject raycastBlock;
     public GameObject allContainers;
     public GameObject interfaceButtons;
+    public GameObject gameMenuBack;
+    public GameObject standardMenuBack;
 
 	public UIInterface mainUI;
 
 	public GameMenu gameMenu;
-	public ChanceInterface chance;
-    public MenuInterface startMenu;
+    public StandardMenu standardMenu;
+    public StartMenu startMenu;
 
+    public SchoolMenu schoolMenu;
+    public ApplyJobMenu applyJobMenu;
+    public JobMenu jobMenu;
+    public SupportMenu supportMenu;
+
+    public MoneyMenu moneyMenu;
+    public StrangerMenu strangerMenu;
+    public FoodMenu foodMenu;
+
+    public ChanceInterface chance;
 
     public Button backButton;
     public Button moneyButton;
 
     public GameObject endScreen;
-    public Text goodEnding;
-    public Text neutralEnding;
-    public Text badEnding;
 
 	[Header("Main player")]
 	public PlayerInfo player;
@@ -180,9 +252,28 @@ public class GameController : MonoBehaviour {
     public void SetupGame()
     {
         SetContainersActive();
+        SetUIActive();
         SetContainersInactive();
-        startMenu.container.SetActive(true);
+        SetUIInactive();
+
+        raycastBlock.SetActive(true);
+        showStartMenu();
+
         RandomizePlayer(player);
+    }
+
+    public void ExitGame()
+    {
+        SetContainersInactive();
+        SetUIInactive();
+
+        raycastBlock.SetActive(false);
+
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+
+        Application.Quit();
     }
 
 	void RandomizePlayer(PlayerInfo a_player)
@@ -242,10 +333,6 @@ public class GameController : MonoBehaviour {
         {
             child.gameObject.SetActive(false);
         }
-        foreach (Transform child in interfaceButtons.transform)
-        {
-            child.gameObject.SetActive(false);
-        }
     }
 
     public void SetContainersActive()
@@ -254,72 +341,325 @@ public class GameController : MonoBehaviour {
         {
             child.gameObject.SetActive(true);
         }
-        foreach (Transform child in interfaceButtons.transform)
-        {
-            child.gameObject.SetActive(true);
-        }
     }
 
-    public void ActivateUI()
+    public void SetUIInactive()
+    {
+        interfaceButtons.SetActive(false);
+    }
+
+    public void SetUIActive()   
     {
         interfaceButtons.SetActive(true);
-        foreach (Transform child in interfaceButtons.transform)
+
+        if (inGameMenu == true)
         {
-            child.gameObject.SetActive(true);
+            gameMenuBack.SetActive(true);
+            standardMenuBack.SetActive(false);
+        }
+
+        if (inStandardMenu == true)
+        {
+            gameMenuBack.SetActive(false);
+            standardMenuBack.SetActive(true);
         }
     }
-	public void back_onClick()
-	{
-		SetContainersInactive();
-        raycastBlock.SetActive(true);
-        backButton.gameObject.SetActive(false);
-	}
-
-	public void chance_onClick()
-	{
-		SetContainersInactive();
-		chance.container.SetActive(true);
-            
-        ChanceTurn();
-	}
-
-    public void newGame_onClick()
-	{
-		SetContainersInactive();
-		gameMenu.container.SetActive(true);
-        ActivateUI();
-	}
 
     void endTurn_onClick()
     {
         turnInProgress = false;
     }
 
-    void endGameSequence()
+    //--------------------------------------------------------------//
+
+    // Start Menu functions
+    public void showStartMenu()
     {
-        turnInProgress = false;
-        mainUI.roundCounter.text = "Game Over";
-        mainUI.moneyIcon.image = null;
-        mainUI.moneyText.text = null;
-        moneyButton.gameObject.SetActive(false);
-
-        endScreen.gameObject.SetActive(true);
-        backButton.gameObject.SetActive(false);
-
-        if(player.c.stats.governmentID)
-        {
-            goodEnding.gameObject.SetActive(true);
-        }
-        else if (player.c.stats.money >= 40)
-        {
-            neutralEnding.gameObject.SetActive(true);
-        }
-        else
-        {
-            badEnding.gameObject.SetActive(true);
-        }
+        startMenu.container.SetActive(true);
     }
 
+    public void newGame_onClick()
+	{
+		SetContainersInactive();
+        showGameMenu();
+	}
+
+    public void options_onClick()
+    {
+
+    }
+
+    public void exit_onClick()
+    {
+        ExitGame();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Game Menu functions
+    public void showGameMenu()
+    {
+        inGameMenu = true;
+        inStandardMenu = false;
+
+        SetUIActive();
+        gameMenu.container.SetActive(true);
+
+        gameMenu.applyJob.gameObject.SetActive(!player.c.stats.isEmployed);
+    }
+
+    public void gameMenu_back_onClick()
+    {
+        SetContainersInactive();
+        showGameMenu();
+    }
+
+    //Standard Menu functions
+    public void showStandardMenu()
+    {
+        inGameMenu = false;
+        inStandardMenu = true;
+
+        SetUIActive();
+        standardMenu.container.SetActive(true);
+    }
+
+    public void standardMenu_back_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //School Menu functions
+    public void school_onClick()
+    {
+        showSchoolMenu();
+    }
+
+    public void showSchoolMenu()
+    {
+        SetContainersInactive();
+        schoolMenu.container.SetActive(true);
+    }
+    
+    public void schoolTransit_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void schoolWalkLong_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void schoolWalkShort_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+    
+    //--------------------------------------------------------------//
+
+    //Apply for Job functions
+    public void applyJob_onClick()
+    {
+        showApplyJobMenu();
+    }
+
+    public void showApplyJobMenu()
+    {
+        SetContainersInactive();
+        applyJobMenu.container.SetActive(true);
+    }
+
+    public void applyJob_coldCall_onClick()
+    {
+        player.c.stats.isEmployed = true;
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void applyJob_friend_onClick()
+    {
+        player.c.stats.isEmployed = true;
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void applyJob_applyOnline_onClick()
+    {
+        player.c.stats.isEmployed = true;
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Job functions
+    public void job_onClick()
+    {
+        showJobMenu();
+    }
+    
+    public void showJobMenu()
+    {
+        SetContainersInactive();
+        jobMenu.container.SetActive(true);
+    }
+
+    public void jobTransit_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void jobWalkShort_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void jobWalkLong_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Support functions
+    public void support_onClick()
+    {
+        showSupportMenu();
+    }
+
+    public void showSupportMenu()
+    {
+        SetContainersInactive();
+        supportMenu.container.SetActive(true);
+    }
+
+    public void supportFriends_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void supportFamily_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void supportServices_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Money functions
+    public void money_onClick()
+    {
+        showMoneyMenu();
+    }
+
+    public void showMoneyMenu()
+    {
+        SetContainersInactive();
+        moneyMenu.container.SetActive(true);
+    }
+
+    public void moneySteal_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void moneyPanhandle_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void moneyLabour_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Stranger functions
+    public void stranger_onClick()
+    {
+        showStrangerMenu();
+    }
+
+    public void showStrangerMenu()
+    {
+        SetContainersInactive();
+        strangerMenu.container.SetActive(true);
+    }
+
+    public void strangerPedestrian_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void strangerHomeless_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void strangerShopOwner_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+    
+    //Food functions    
+    public void food_onClick()
+    {
+        showFoodMenu();
+    }
+
+    public void showFoodMenu()
+    {
+        SetContainersInactive();
+        foodMenu.container.SetActive(true);
+    }
+
+    public void foodScavenge_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void foodFastFood_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    public void foodRefuge_onClick()
+    {
+        SetContainersInactive();
+        showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Player stat change functions
     public void ChangeMoney(int amount)
     {
         player.c.stats.money += amount;
@@ -339,13 +679,6 @@ public class GameController : MonoBehaviour {
     public void SetID(bool hasID)
     { 
         player.c.stats.governmentID = hasID;
-    }
-
-    public void EndPlayerTurn()
-    {
-        //inc turn number
-        player.c.stats.hygiene -= 5;
-        print("Ended my turn bitches");
     }
 
     public void AddWellBeing()
@@ -378,6 +711,22 @@ public class GameController : MonoBehaviour {
         }
     }
 
+    public void EndPlayerTurn()
+    {
+        //inc turn number
+        player.c.stats.hygiene -= 5;
+        print("Ended my turn bitches");
+    }
+
+    //Deprecated
+    public void chance_onClick()
+    {
+        SetContainersInactive();
+        chance.container.SetActive(true);
+
+        ChanceTurn();
+    }
+
 	public void ChanceTurn()
 	{
         var c = chance;
@@ -393,7 +742,7 @@ public class GameController : MonoBehaviour {
         var t = c.proceed.GetComponentInChildren<Text>();
         t.text = (card.endsTurn ? "End Turn" : "Next");
         c.proceed.onClick.AddListener(() => {
-            if (!card.endsTurn) back_onClick();
+            if (!card.endsTurn) gameMenu_back_onClick();
             else chance.container.SetActive(false);
         });
 

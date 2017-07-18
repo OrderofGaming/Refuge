@@ -26,6 +26,8 @@ public class PlayerStats
 
     public List<Items.ItemContainer> inventory;
 
+    public bool isEmployed;
+
 	public bool governmentID;
     public bool inJail;
     public int missedTurns;
