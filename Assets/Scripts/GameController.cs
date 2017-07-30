@@ -98,9 +98,13 @@ public class ChanceInterface
 [System.Serializable]
 public class UIInterface
 {
-	public UpdateLabel hygiene, wellbeing;
+	public int hygiene;
+    public Text hygieneText;
 
-	[Header("Top Bar")]
+    public int wellbeing;
+    public Text wellbeingText;
+
+    [Header("Top Bar")]
 	public Toggle moneyIcon;
 	public Text moneyText;
 
@@ -123,7 +127,17 @@ public class GameController : MonoBehaviour {
     private bool inGameMenu = false;
     private bool inStandardMenu = false;
 
-	[Header("Interfaces")]
+    [Header("Time of Day")]
+    public int timeOfDay = 7;
+    public int dayTimeStart = 7;
+    public Text timeText;
+    public Text AM_PM;
+
+    [Header("Turn Counter")]
+    public int turnCounter = 1;
+    public Text turnText;
+
+    [Header("Interfaces")]
 	public GameObject raycastBlock;
     public GameObject allContainers;
     public GameObject interfaceButtons;
@@ -152,12 +166,8 @@ public class GameController : MonoBehaviour {
 
     public GameObject endScreen;
 
-	[Header("Main player")]
+    [Header("Main player")]
 	public PlayerInfo player;
-
-	// This boolean dictates when the turn is over
-	private bool turnInProgress;
-    private bool endGame = false;
 
 	[Header("Set of haircolors")]
 	public Color[] m_haircolors;
@@ -165,10 +175,6 @@ public class GameController : MonoBehaviour {
 	[Header("Set of skintones")]
 	public Color[] m_skintones;
 
-	// Control who's turn it is
-	[HideInInspector] public int currentPlayersTurn = 0;
-
-    private int turnCounter = 0;
 
 	#region FEMALE NAMES
 
@@ -319,13 +325,62 @@ public class GameController : MonoBehaviour {
 
 	public void UpdatePlayerInfo()
 	{
-        mainUI.hygiene.UpdateValues((int)(player.c.stats.hygiene));
-        mainUI.wellbeing.UpdateValues((int)(player.c.stats.wellbeing));
+
+	}
+
+    public void UpdateUI()
+    {
+        timeText.text = ((timeOfDay > 12) ? timeOfDay - 12 : timeOfDay).ToString() + ":00";
+        AM_PM.text = (timeOfDay >= 12) ? "PM" : "AM";
 
         mainUI.moneyText.text = "$" + player.c.stats.money.ToString("N0");
+        mainUI.moneyIcon.isOn = player.c.stats.money == 0 ? false : true;
 
-		mainUI.moneyIcon.isOn = player.c.stats.money == 0 ? false : true;
-	}
+        mainUI.hygieneText.text = mainUI.hygiene.ToString();
+        mainUI.wellbeingText.text = mainUI.wellbeing.ToString();
+
+
+        if (timeOfDay >= 24)
+        {
+            EndPlayerTurn();
+        }
+
+    }
+
+    //End Turn functions
+    void endTurn_onClick()
+    {
+        EndPlayerTurn();
+    }
+
+    public void EndPlayerTurn()
+    {
+        turnCounter += 1;
+        turnText.text = turnCounter.ToString();
+        resetTime();
+
+        SetContainersInactive();
+        showGameMenu();
+
+        UpdatePlayerInfo();
+        UpdateUI();
+    }
+
+    //Game time functions         
+    public void resetTime()
+    {
+        timeOfDay = dayTimeStart;
+    }
+
+    public void setTime(int newTime)
+    {
+        timeOfDay = newTime;
+    }
+
+    public int getTime()
+    {
+        return timeOfDay;
+    }
 
     public void SetContainersInactive()
     {
@@ -363,11 +418,6 @@ public class GameController : MonoBehaviour {
             gameMenuBack.SetActive(false);
             standardMenuBack.SetActive(true);
         }
-    }
-
-    void endTurn_onClick()
-    {
-        turnInProgress = false;
     }
 
     //--------------------------------------------------------------//
@@ -447,19 +497,25 @@ public class GameController : MonoBehaviour {
     public void schoolTransit_onClick()
     {
         SetContainersInactive();
+        timeOfDay += 8;
         showStandardMenu();
+        UpdateUI();
     }
 
     public void schoolWalkLong_onClick()
     {
         SetContainersInactive();
+        timeOfDay += 8;
         showStandardMenu();
+        UpdateUI();
     }
 
     public void schoolWalkShort_onClick()
     {
         SetContainersInactive();
+        timeOfDay += 8;
         showStandardMenu();
+        UpdateUI();
     }
     
     //--------------------------------------------------------------//
@@ -478,23 +534,35 @@ public class GameController : MonoBehaviour {
 
     public void applyJob_coldCall_onClick()
     {
-        player.c.stats.isEmployed = true;
+        float chance = Random.Range(0.0f, 100.0f);
+        player.c.stats.isEmployed = chance >= 50.0f;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     public void applyJob_friend_onClick()
     {
-        player.c.stats.isEmployed = true;
+        float chance = Random.Range(0.0f, 100.0f);
+        player.c.stats.isEmployed = chance >= 50.0f;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     public void applyJob_applyOnline_onClick()
     {
-        player.c.stats.isEmployed = true;
+        float chance = Random.Range(0.0f, 100.0f);
+        player.c.stats.isEmployed = chance >= 50.0f;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     //--------------------------------------------------------------//
@@ -513,20 +581,29 @@ public class GameController : MonoBehaviour {
 
     public void jobTransit_onClick()
     {
+        player.c.stats.money += 50;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     public void jobWalkShort_onClick()
     {
+        player.c.stats.money += 50;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     public void jobWalkLong_onClick()
     {
+        player.c.stats.money += 50;
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     //--------------------------------------------------------------//
@@ -577,8 +654,23 @@ public class GameController : MonoBehaviour {
 
     public void moneySteal_onClick()
     {
+        float chance = Random.Range(0.0f, 100.0f);
+        if (chance >= 40.0f)
+            player.c.stats.money += 15;
+        else
+        {
+            player.c.stats.money -= 15;
+            player.c.stats.wellbeing -= 10;
+        }
+
+        player.c.stats.hygiene -= 5;
+
+        timeOfDay += 2;
+
         SetContainersInactive();
         showStandardMenu();
+
+        UpdateUI();
     }
 
     public void moneyPanhandle_onClick()
@@ -709,13 +801,6 @@ public class GameController : MonoBehaviour {
             player.c.stats.governmentID = true;
             UpdatePlayerInfo();
         }
-    }
-
-    public void EndPlayerTurn()
-    {
-        //inc turn number
-        player.c.stats.hygiene -= 5;
-        print("Ended my turn bitches");
     }
 
     //Deprecated
