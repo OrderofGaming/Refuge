@@ -23,6 +23,12 @@ public class StartMenu
 {
     public GameObject container;
     public Button newGame, loadGame, exitGame;
+}
+
+[System.Serializable]
+public class TitleMenu
+{
+    public GameObject container;
     public Text titleText;
 }
 
@@ -98,14 +104,13 @@ public class ChanceInterface
 [System.Serializable]
 public class UIInterface
 {
+    [Header("Stats")]
 	public int hygiene;
-    public Text hygieneText;
+    public Image hygieneWheel;
 
     public int wellbeing;
-    public Text wellbeingText;
+    public Image wellBeingBar;
 
-    [Header("Top Bar")]
-	public Toggle moneyIcon;
 	public Text moneyText;
 
     public Text roundCounter;
@@ -121,7 +126,7 @@ public class GameController : MonoBehaviour {
 
 		public Character c;
 		public Image backgroundImage;
-		public Text infoLabel;
+        public Text employment;
 	}
 
     private bool inGameMenu = false;
@@ -139,7 +144,7 @@ public class GameController : MonoBehaviour {
 
     [Header("Interfaces")]
 	public GameObject raycastBlock;
-    public GameObject allContainers;
+    public GameObject allMenus;
     public GameObject interfaceButtons;
     public GameObject gameMenuBack;
     public GameObject standardMenuBack;
@@ -149,6 +154,7 @@ public class GameController : MonoBehaviour {
 	public GameMenu gameMenu;
     public StandardMenu standardMenu;
     public StartMenu startMenu;
+    public TitleMenu titleMenu;
 
     public SchoolMenu schoolMenu;
     public ApplyJobMenu applyJobMenu;
@@ -266,6 +272,8 @@ public class GameController : MonoBehaviour {
         showStartMenu();
 
         RandomizePlayer(player);
+        InitializePlayer();
+        UpdateUI();
     }
 
     public void ExitGame()
@@ -282,6 +290,13 @@ public class GameController : MonoBehaviour {
         Application.Quit();
     }
 
+    void InitializePlayer()
+    {
+        player.c.stats.hygiene = 80;
+        player.c.stats.wellbeing = 75;
+        player.c.stats.money = 50;
+    }
+
 	void RandomizePlayer(PlayerInfo a_player)
 	{
 		// Male or female?
@@ -295,12 +310,12 @@ public class GameController : MonoBehaviour {
 		// Not sure which numbers to use
 		a_player.age = Random.Range (16, 23);
 
-		int fontSize = a_player.infoLabel.fontSize;
+		//int fontSize = a_player.infoLabel.fontSize;
 
 		// Add the info
-		a_player.infoLabel.text = a_player.firstName +
-			"\n<size=" + (fontSize / 2).ToString() +">" + (a_player.c.isMale ? "Male, " : "Female, ") +
-		a_player.age.ToString () + "</size>";
+		//a_player.infoLabel.text = a_player.firstName +
+		//	"\n<size=" + (fontSize / 2).ToString() +">" + (a_player.c.isMale ? "Male, " : "Female, ") +
+		//a_player.age.ToString () + "</size>";
 		
 		// Pick a random hairstyle
 		a_player.c.hairdo = Random.Range (1, 7);
@@ -334,10 +349,13 @@ public class GameController : MonoBehaviour {
         AM_PM.text = (timeOfDay >= 12) ? "PM" : "AM";
 
         mainUI.moneyText.text = "$" + player.c.stats.money.ToString("N0");
-        mainUI.moneyIcon.isOn = player.c.stats.money == 0 ? false : true;
 
-        mainUI.hygieneText.text = mainUI.hygiene.ToString();
-        mainUI.wellbeingText.text = mainUI.wellbeing.ToString();
+        mainUI.hygiene = player.c.stats.hygiene;
+        mainUI.wellbeing = player.c.stats.wellbeing;
+        mainUI.wellBeingBar.fillAmount = mainUI.wellbeing / 100.0f;
+        mainUI.hygieneWheel.fillAmount = mainUI.hygiene / 100.0f;
+
+        player.employment.text = player.c.stats.isEmployed ? "Employed" : "Unemployed";
 
 
         if (timeOfDay >= 24)
@@ -384,7 +402,7 @@ public class GameController : MonoBehaviour {
 
     public void SetContainersInactive()
     {
-        foreach (Transform child in allContainers.transform)
+        foreach (Transform child in allMenus.transform)
         {
             child.gameObject.SetActive(false);
         }
@@ -392,7 +410,7 @@ public class GameController : MonoBehaviour {
 
     public void SetContainersActive()
     {
-        foreach (Transform child in allContainers.transform)
+        foreach (Transform child in allMenus.transform)
         {
             child.gameObject.SetActive(true);
         }
@@ -426,11 +444,12 @@ public class GameController : MonoBehaviour {
     public void showStartMenu()
     {
         startMenu.container.SetActive(true);
+        titleMenu.container.SetActive(true);
     }
 
     public void newGame_onClick()
 	{
-		SetContainersInactive();
+        SetContainersInactive();
         showGameMenu();
 	}
 
@@ -582,6 +601,7 @@ public class GameController : MonoBehaviour {
     public void jobTransit_onClick()
     {
         player.c.stats.money += 50;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
 
@@ -591,6 +611,7 @@ public class GameController : MonoBehaviour {
     public void jobWalkShort_onClick()
     {
         player.c.stats.money += 50;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
 
@@ -600,6 +621,7 @@ public class GameController : MonoBehaviour {
     public void jobWalkLong_onClick()
     {
         player.c.stats.money += 50;
+        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
 

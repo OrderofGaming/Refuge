@@ -19,15 +19,9 @@ public class BackstoryLoader : MonoBehaviour {
     private string formatString = "{0}\n\n{1}\n\n{2}";
 
     // Use this for initialization
-    void Start () {
-        var separators = new char[] { '\n' };
-        introductions = RemoveEmpty(introTexts.text.Split(separators));
-        stories = RemoveEmpty(storyTexts.text.Split(separators));
-        aspirations = RemoveEmpty(aspirationTexts.text.Split(separators));
+    void Start ()
+    {
 
-        //InvokeRepeating("GetBackstory", 0, 1.5f);
-
-		biography.text = GetBackstory ();
 	}
 
     private string[] RemoveEmpty(string[] text)
