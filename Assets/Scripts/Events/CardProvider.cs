@@ -94,15 +94,4 @@ public class CardProvider : MonoBehaviour
         if (ps.money < 0)
             ps.money = 0;
     }
-
-    void f_GoToJail(string a_value)
-    { 
-        ps.missedTurns = int.Parse(a_value);
-        ps.inJail = true;
-    }
-
-    void f_MissTurn(string a_value)
-    {
-        ps.missedTurns = int.Parse(a_value);
-    }
 }

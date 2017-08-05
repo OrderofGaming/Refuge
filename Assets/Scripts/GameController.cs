@@ -112,8 +112,6 @@ public class UIInterface
     public Image wellBeingBar;
 
 	public Text moneyText;
-
-    public Text roundCounter;
 }
 
 public class GameController : MonoBehaviour {
@@ -133,14 +131,20 @@ public class GameController : MonoBehaviour {
     private bool inStandardMenu = false;
 
     [Header("Time of Day")]
-    public int timeOfDay = 7;
-    public int dayTimeStart = 7;
+    public TimeUtility time;
     public Text timeText;
     public Text AM_PM;
+
+    [Header("Status")]
+    public Text lateForSchool;
+    public Text lateForWork;
 
     [Header("Turn Counter")]
     public int turnCounter = 1;
     public Text turnText;
+
+    [Header("Activities")]
+    public ActivityUtility activities;
 
     [Header("Interfaces")]
 	public GameObject raycastBlock;
@@ -270,7 +274,10 @@ public class GameController : MonoBehaviour {
 
         raycastBlock.SetActive(true);
         showStartMenu();
+        lateForWork.gameObject.SetActive(false);
+        lateForSchool.gameObject.SetActive(false);
 
+        time.SetTime(time.wakeUpTime);
         RandomizePlayer(player);
         InitializePlayer();
         UpdateUI();
@@ -338,16 +345,23 @@ public class GameController : MonoBehaviour {
 		a_player.c.UpdateCharacter ();
 	}
 
-	public void UpdatePlayerInfo()
-	{
-
-	}
-
-    public void UpdateUI()
+    public void spendMoney(int cost)
     {
-        timeText.text = ((timeOfDay > 12) ? timeOfDay - 12 : timeOfDay).ToString() + ":00";
-        AM_PM.text = (timeOfDay >= 12) ? "PM" : "AM";
+        player.c.stats.money -= cost;
+        UpdateUI();
+    }
 
+    public void UpdateTime()
+    {
+        int hour = time.GetHour();
+        int minutes = (time.tickCounter % (60 / time.tickSize)) * time.tickSize;
+
+        timeText.text = ((hour > 12) ? hour - 12 : hour).ToString() + ":" + ((minutes < 10) ? "0" : "") + minutes.ToString();
+        AM_PM.text = (hour >= 12) ? "PM" : "AM";
+    }
+
+    public void UpdatePlayerInfo()
+    {
         mainUI.moneyText.text = "$" + player.c.stats.money.ToString("N0");
 
         mainUI.hygiene = player.c.stats.hygiene;
@@ -356,13 +370,44 @@ public class GameController : MonoBehaviour {
         mainUI.hygieneWheel.fillAmount = mainUI.hygiene / 100.0f;
 
         player.employment.text = player.c.stats.isEmployed ? "Employed" : "Unemployed";
+    }
 
+    public void UpdatePlayerStatus()
+    {
+        lateForWork.gameObject.SetActive(true);
+        lateForSchool.gameObject.SetActive(true);
 
-        if (timeOfDay >= 24)
+        if (player.c.stats.wentToWork)
         {
-            EndPlayerTurn();
+            lateForWork.gameObject.SetActive(true);
+            lateForWork.text = player.c.stats.onTimeWork ? "On Time for Work" : "Late for Work";
+            lateForWork.color = player.c.stats.onTimeWork ? Color.blue : Color.red;
+        }
+        else
+        {
+            lateForWork.gameObject.SetActive(false);
         }
 
+        if (player.c.stats.attendedSchool)
+        {
+            lateForSchool.gameObject.SetActive(true);
+            lateForSchool.text = player.c.stats.onTimeSchool ? "On Time for School" : "Late for School";
+            lateForSchool.color = player.c.stats.onTimeSchool ? Color.blue : Color.red;
+        }
+        else
+        {
+            lateForSchool.gameObject.SetActive(false);
+        }
+    }
+
+    public void UpdateUI()
+    {
+        if (time.GetHour() >= 24)
+            EndPlayerTurn();
+
+        UpdateTime();
+        UpdatePlayerInfo();
+        UpdatePlayerStatus();
     }
 
     //End Turn functions
@@ -375,29 +420,65 @@ public class GameController : MonoBehaviour {
     {
         turnCounter += 1;
         turnText.text = turnCounter.ToString();
-        resetTime();
+
+        ComputeSleep();
+        ResetTime();
 
         SetContainersInactive();
         showGameMenu();
 
-        UpdatePlayerInfo();
         UpdateUI();
+
+        LogPlayerInfo();
+
+        player.c.stats.wentToWork = false;
+        player.c.stats.attendedSchool = false;
+        lateForWork.gameObject.SetActive(false);
+        lateForSchool.gameObject.SetActive(false);
+    }
+
+    public void LogPlayerInfo()
+    {
+        Debug.Log("Wellbeing = " + player.c.stats.wellbeing.ToString());
+        Debug.Log("Hygiene = " + player.c.stats.hygiene.ToString());
+        Debug.Log("Sleep Quality = " + player.c.stats.lastNightSleep.ToString());
+    }
+
+    public void ComputeSleep()
+    {
+        if (player.c.stats.wellbeing <= 35)
+            player.c.stats.lastNightSleep = PlayerStats.sleepQuality.BAD;
+        else if (player.c.stats.wellbeing > 70)
+            player.c.stats.lastNightSleep = PlayerStats.sleepQuality.GOOD;
+        else
+            player.c.stats.lastNightSleep = PlayerStats.sleepQuality.NEUTRAL;
+    }
+
+    public void PopulateActivityList()
+    {
+
     }
 
     //Game time functions         
-    public void resetTime()
+    public void ResetTime()
     {
-        timeOfDay = dayTimeStart;
-    }
-
-    public void setTime(int newTime)
-    {
-        timeOfDay = newTime;
-    }
-
-    public int getTime()
-    {
-        return timeOfDay;
+        if (player.c.stats.lastNightSleep == PlayerStats.sleepQuality.GOOD)
+            time.SetTime(7);
+        else if (player.c.stats.lastNightSleep == PlayerStats.sleepQuality.NEUTRAL)
+            time.SetTime(Random.Range(7.0f, 8.0f));
+        else
+        {
+            float chance = Random.Range(0.0f, 100.0f);
+            if (chance >= 11)
+            {
+                time.SetTime(Random.Range(8.0f, 11.0f));
+            }
+            else
+            {
+                time.SetTime(7, 0);
+                player.c.stats.wellbeing -= 25;
+            }
+        }
     }
 
     public void SetContainersInactive()
@@ -513,26 +594,16 @@ public class GameController : MonoBehaviour {
         schoolMenu.container.SetActive(true);
     }
     
-    public void schoolTransit_onClick()
+    public void schoolTravel_onClick(int minutes)
     {
         SetContainersInactive();
-        timeOfDay += 8;
-        showStandardMenu();
-        UpdateUI();
-    }
 
-    public void schoolWalkLong_onClick()
-    {
-        SetContainersInactive();
-        timeOfDay += 8;
-        showStandardMenu();
-        UpdateUI();
-    }
+        time.AdvanceTime(0, minutes);
+        player.c.stats.onTimeSchool = time.IsBefore(8, 31);
 
-    public void schoolWalkShort_onClick()
-    {
-        SetContainersInactive();
-        timeOfDay += 8;
+        time.SetTime(15, 30);
+        player.c.stats.attendedSchool = true;
+
         showStandardMenu();
         UpdateUI();
     }
@@ -554,8 +625,8 @@ public class GameController : MonoBehaviour {
     public void applyJob_coldCall_onClick()
     {
         float chance = Random.Range(0.0f, 100.0f);
-        player.c.stats.isEmployed = chance >= 50.0f;
-        timeOfDay += 8;
+        player.c.stats.isEmployed = true;
+        time.SetTime(17);
         SetContainersInactive();
         showStandardMenu();
 
@@ -566,7 +637,7 @@ public class GameController : MonoBehaviour {
     {
         float chance = Random.Range(0.0f, 100.0f);
         player.c.stats.isEmployed = chance >= 50.0f;
-        timeOfDay += 8;
+        time.SetTime(17);
         SetContainersInactive();
         showStandardMenu();
 
@@ -577,7 +648,7 @@ public class GameController : MonoBehaviour {
     {
         float chance = Random.Range(0.0f, 100.0f);
         player.c.stats.isEmployed = chance >= 50.0f;
-        timeOfDay += 8;
+        time.SetTime(17);
         SetContainersInactive();
         showStandardMenu();
 
@@ -598,30 +669,16 @@ public class GameController : MonoBehaviour {
         jobMenu.container.SetActive(true);
     }
 
-    public void jobTransit_onClick()
+    public void jobTravel_onClick(int minutes)
     {
-        player.c.stats.money += 50;
-        timeOfDay += 8;
-        SetContainersInactive();
-        showStandardMenu();
+        time.AdvanceTime(0, minutes);
+        player.c.stats.onTimeWork = time.IsBefore(8, 1);
 
-        UpdateUI();
-    }
+        Debug.Log(player.c.stats.onTimeWork.ToString());
 
-    public void jobWalkShort_onClick()
-    {
-        player.c.stats.money += 50;
-        timeOfDay += 8;
-        SetContainersInactive();
-        showStandardMenu();
+        time.SetTime(17);
+        player.c.stats.wentToWork = true;
 
-        UpdateUI();
-    }
-
-    public void jobWalkLong_onClick()
-    {
-        player.c.stats.money += 50;
-        timeOfDay += 8;
         SetContainersInactive();
         showStandardMenu();
 
@@ -687,7 +744,7 @@ public class GameController : MonoBehaviour {
 
         player.c.stats.hygiene -= 5;
 
-        timeOfDay += 2;
+        time.AdvanceTime(1, 15);
 
         SetContainersInactive();
         showStandardMenu();
@@ -772,58 +829,6 @@ public class GameController : MonoBehaviour {
     }
 
     //--------------------------------------------------------------//
-
-    //Player stat change functions
-    public void ChangeMoney(int amount)
-    {
-        player.c.stats.money += amount;
-        if (player.c.stats.money < 0)
-            player.c.stats.money = 0;
-        UpdatePlayerInfo();
-    }
-
-    public void SetMoney(int amount)
-    {
-        player.c.stats.money = amount;
-        if (player.c.stats.money < 0)
-            player.c.stats.money = 0;
-        UpdatePlayerInfo();
-    }
-
-    public void SetID(bool hasID)
-    { 
-        player.c.stats.governmentID = hasID;
-    }
-
-    public void AddWellBeing()
-    {
-        if (player.c.stats.money >= 20)
-        {
-            ChangeMoney(-20); // Update the Money and MoneyUI
-            player.c.stats.wellbeing += 20;
-            UpdatePlayerInfo();
-        }
-    }
-
-    public void AddHygiene()
-    {
-        if (player.c.stats.money >= 20)
-        {
-            ChangeMoney(-20); // Update the Money and MoneyUI
-            player.c.stats.hygiene += 20;
-            UpdatePlayerInfo();
-        }
-    }
-
-    public void AddID()
-    {
-        if (player.c.stats.money >= 150)
-        {
-            ChangeMoney(-150);
-            player.c.stats.governmentID = true;
-            UpdatePlayerInfo();
-        }
-    }
 
     //Deprecated
     public void chance_onClick()
