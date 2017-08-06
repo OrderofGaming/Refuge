@@ -19,6 +19,13 @@ public class StandardMenu
 }
 
 [System.Serializable]
+public class ActivityMenu
+{
+    public GameObject container;
+    public List<ActivityButton> activityButtons;
+}
+
+[System.Serializable]
 public class StartMenu
 {
     public GameObject container;
@@ -112,6 +119,8 @@ public class UIInterface
     public Image wellBeingBar;
 
 	public Text moneyText;
+
+    public Button swapButton;
 }
 
 public class GameController : MonoBehaviour {
@@ -129,6 +138,7 @@ public class GameController : MonoBehaviour {
 
     private bool inGameMenu = false;
     private bool inStandardMenu = false;
+    private bool inActivityMenu = false;
 
     [Header("Time of Day")]
     public TimeUtility time;
@@ -145,6 +155,7 @@ public class GameController : MonoBehaviour {
 
     [Header("Activities")]
     public ActivityUtility activities;
+    public List<Text> activityText;
 
     [Header("Interfaces")]
 	public GameObject raycastBlock;
@@ -152,11 +163,13 @@ public class GameController : MonoBehaviour {
     public GameObject interfaceButtons;
     public GameObject gameMenuBack;
     public GameObject standardMenuBack;
+    public GameObject activityMenuBack;
 
 	public UIInterface mainUI;
 
 	public GameMenu gameMenu;
     public StandardMenu standardMenu;
+    public ActivityMenu activityMenu;
     public StartMenu startMenu;
     public TitleMenu titleMenu;
 
@@ -306,43 +319,43 @@ public class GameController : MonoBehaviour {
 
 	void RandomizePlayer(PlayerInfo a_player)
 	{
-		// Male or female?
-		a_player.c.isMale = Random.Range (0, 2) == 0 ? true : false;
+		//// Male or female?
+		//a_player.c.isMale = Random.Range (0, 2) == 0 ? true : false;
 
-		if (a_player.c.isMale) {
-			a_player.firstName = maleNames [Random.Range (0, maleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
-		} else {
-			a_player.firstName = femaleNames [Random.Range (0, femaleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
-		}
-		// Not sure which numbers to use
-		a_player.age = Random.Range (16, 23);
+		//if (a_player.c.isMale) {
+		//	a_player.firstName = maleNames [Random.Range (0, maleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
+		//} else {
+		//	a_player.firstName = femaleNames [Random.Range (0, femaleNames.Length)] + " " + ((char)(65 + Random.Range(0, 26))).ToString() + ".";
+		//}
+		//// Not sure which numbers to use
+		//a_player.age = Random.Range (16, 23);
 
-		//int fontSize = a_player.infoLabel.fontSize;
+		////int fontSize = a_player.infoLabel.fontSize;
 
-		// Add the info
-		//a_player.infoLabel.text = a_player.firstName +
-		//	"\n<size=" + (fontSize / 2).ToString() +">" + (a_player.c.isMale ? "Male, " : "Female, ") +
-		//a_player.age.ToString () + "</size>";
+		//// Add the info
+		////a_player.infoLabel.text = a_player.firstName +
+		////	"\n<size=" + (fontSize / 2).ToString() +">" + (a_player.c.isMale ? "Male, " : "Female, ") +
+		////a_player.age.ToString () + "</size>";
 		
-		// Pick a random hairstyle
-		a_player.c.hairdo = Random.Range (1, 7);
+		//// Pick a random hairstyle
+		//a_player.c.hairdo = Random.Range (1, 7);
 
-		// A random shirt color
-		a_player.c.shirtColor = Random.ColorHSV(0.0f, 1.0f, 0.5f, 1.0f, 0.2f, 1.0f, 1.0f, 1.0f);
-		// Pick a random haircolor
-		a_player.c.hairColor = m_haircolors [Random.Range (0, m_haircolors.Length)];
+		//// A random shirt color
+		//a_player.c.shirtColor = Random.ColorHSV(0.0f, 1.0f, 0.5f, 1.0f, 0.2f, 1.0f, 1.0f, 1.0f);
+		//// Pick a random haircolor
+		//a_player.c.hairColor = m_haircolors [Random.Range (0, m_haircolors.Length)];
 
-		// Pick a random skintone
-		a_player.c.skinTone = m_skintones [Random.Range (0, m_skintones.Length)];
+		//// Pick a random skintone
+		//a_player.c.skinTone = m_skintones [Random.Range (0, m_skintones.Length)];
 
-		// Pick a random sleeve length
-		a_player.c.sleeveLength = Random.Range(0, 4);
+		//// Pick a random sleeve length
+		//a_player.c.sleeveLength = Random.Range(0, 4);
 
-		// Start smiling!
-		a_player.c.smile = 3;
+		//// Start smiling!
+		//a_player.c.smile = 3;
 
-		// Update everyone
-		a_player.c.UpdateCharacter ();
+		//// Update everyone
+		//a_player.c.UpdateCharacter ();
 	}
 
     public void spendMoney(int cost)
@@ -454,11 +467,6 @@ public class GameController : MonoBehaviour {
             player.c.stats.lastNightSleep = PlayerStats.sleepQuality.NEUTRAL;
     }
 
-    public void PopulateActivityList()
-    {
-
-    }
-
     //Game time functions         
     public void ResetTime()
     {
@@ -500,22 +508,35 @@ public class GameController : MonoBehaviour {
     public void SetUIInactive()
     {
         interfaceButtons.SetActive(false);
+        mainUI.swapButton.gameObject.SetActive(false);
     }
 
     public void SetUIActive()   
     {
         interfaceButtons.SetActive(true);
 
-        if (inGameMenu == true)
+        if (inGameMenu)
         {
             gameMenuBack.SetActive(true);
             standardMenuBack.SetActive(false);
+            activityMenuBack.SetActive(false);
+            mainUI.swapButton.gameObject.SetActive(true);
         }
 
-        if (inStandardMenu == true)
+        if (inStandardMenu)
         {
             gameMenuBack.SetActive(false);
             standardMenuBack.SetActive(true);
+            activityMenuBack.SetActive(false);
+            mainUI.swapButton.gameObject.SetActive(true);
+        }
+        
+        if (inActivityMenu)
+        {
+            gameMenuBack.SetActive(false);
+            standardMenuBack.SetActive(false);
+            activityMenuBack.SetActive(true);
+            mainUI.swapButton.gameObject.SetActive(true);
         }
     }
 
@@ -551,6 +572,7 @@ public class GameController : MonoBehaviour {
     {
         inGameMenu = true;
         inStandardMenu = false;
+        inActivityMenu = false;
 
         SetUIActive();
         gameMenu.container.SetActive(true);
@@ -564,11 +586,14 @@ public class GameController : MonoBehaviour {
         showGameMenu();
     }
 
+    //--------------------------------------------------------------//
+
     //Standard Menu functions
     public void showStandardMenu()
     {
         inGameMenu = false;
         inStandardMenu = true;
+        inActivityMenu = false;
 
         SetUIActive();
         standardMenu.container.SetActive(true);
@@ -578,6 +603,68 @@ public class GameController : MonoBehaviour {
     {
         SetContainersInactive();
         showStandardMenu();
+    }
+
+    //--------------------------------------------------------------//
+
+    //Activity Menu functions
+    public void showActivityMenu()
+    {
+        inGameMenu = false;
+        inStandardMenu = false;
+        inActivityMenu = true;
+
+        SetUIActive();
+        UpdateActivityMenu();
+        activityMenu.container.SetActive(true);
+    }
+
+    public void activityMenu_back_onClick()
+    {
+        SetContainersInactive();
+        showActivityMenu();
+    }
+
+    public void UpdateActivityMenu()
+    {
+        for (int i = 0; i < activityMenu.activityButtons.Count; ++i)
+        {
+            activityMenu.activityButtons[i].SetActivityData(activities.listOfActivities[i]);
+        }
+    }
+
+    public void menuSwap_onClick()
+    {
+        if (inStandardMenu && time.IsBefore(8, 30))
+        {
+            SetContainersInactive();
+            showGameMenu();
+            UpdateUI();
+        }
+        else if (inStandardMenu && !time.IsBefore(15, 30))
+        {
+            SetContainersInactive();
+            showActivityMenu();
+            UpdateUI();
+        }
+        else if (inGameMenu && time.IsBefore(8, 30))
+        {
+            SetContainersInactive();
+            showStandardMenu();
+            UpdateUI();
+
+            //Debug.Log("In Standard Menu = " + inStandardMenu.ToString());
+            //Debug.Log("In Game Menu = " + inGameMenu.ToString());
+            //Debug.Log("In Activity Menu = " + inActivityMenu.ToString());
+            //Debug.Log(time.IsBefore(8, 30).ToString());
+            //Debug.Log(" ");
+        }
+        else if (inActivityMenu && !time.IsBefore(15, 30))
+        {
+            SetContainersInactive();
+            showStandardMenu();
+            UpdateUI();
+        }
     }
 
     //--------------------------------------------------------------//

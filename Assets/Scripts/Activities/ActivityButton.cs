@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 public class ActivityButton : MonoBehaviour
 {
-
     public ActivityUtility.Activity activityData { get; protected set; }
     public Text label;
     public GameController game;
@@ -18,8 +17,9 @@ public class ActivityButton : MonoBehaviour
 
     public void DoActivity()
     {
-        game.time.AdvanceTime(0, activityData.timeInMinutes);
+        game.time.AdvanceTime(activityData.timeInHours, activityData.timeInMinutes);
         game.player.c.stats.wellbeing += activityData.wellbeingChange;
         game.player.c.stats.hygiene += activityData.hygieneChange;
+        game.UpdateUI();
     }
 }

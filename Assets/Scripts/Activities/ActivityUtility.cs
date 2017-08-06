@@ -21,6 +21,7 @@ public class ActivityUtility : MonoBehaviour
     {
         public string name;
         public ActivityType typeOfActivity;
+        public int timeInHours;
         public int timeInMinutes;
         public int wellbeingChange;
         public int hygieneChange;
@@ -29,7 +30,8 @@ public class ActivityUtility : MonoBehaviour
     public List<Activity> listOfActivities;
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+    {
 		
 	}
 	
