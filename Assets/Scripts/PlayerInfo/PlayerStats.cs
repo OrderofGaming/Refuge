@@ -35,6 +35,7 @@ public class PlayerStats
     public List<Items.ItemContainer> inventory;
 
     //Buff/Debuff Flags
+    public bool hasHome = false;
     public bool attendedSchool = false;
     public bool onTimeSchool = false;
 
